@@ -1,0 +1,33 @@
+# Build and compiled files
+bin/
+build/
+out/
+dist/
+cmake-build-*/
+*.o
+*.obj
+*.exe
+*.out
+*.app
+*.dll
+*.so
+*.dylib
+
+# IDE and Editor files
+.vscode/
+.vs/
+.idea/
+*.suo
+*.user
+*.userosv
+*.sln.docstates
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
