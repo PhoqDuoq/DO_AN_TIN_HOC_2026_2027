@@ -4,23 +4,16 @@
 #include <string>
 using namespace std;
 
-class Reader {
-public:
-    Reader();
-    Reader(int id, const string& name, const string& phone);
-
-    int getId() const;
-    string getName() const;
-    string getPhone() const;
-
-    void setId(int id);
-    void setName(const string& name);
-    void setPhone(const string& phone);
-
-private:
-    int id;
-    string name;
-    string phone;
+/**
+ * Struct representing a library reader (độc giả).
+ * Fields follow the design specification for Week 4.
+ */
+struct Reader {
+    string CMND;        // Unique identification number (cannot be empty)
+    string fullName;    // Reader's full name (cannot be empty)
+    string email;       // Email address (optional, but if present must contain '@')
+    string phone;       // Phone number (optional, basic format validation will be done in manager)
+    string cardType;    // Type of library card (e.g., "Student", "Teacher", "Adult")
 };
 
-#endif
+#endif // READER_H
