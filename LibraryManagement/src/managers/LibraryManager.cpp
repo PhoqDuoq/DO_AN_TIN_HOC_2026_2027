@@ -2,6 +2,7 @@
 #include <iostream>
 #include <limits>
 #include <sstream>
+#include <chrono>
 
 using namespace std;
 
@@ -14,6 +15,7 @@ LibraryManager::~LibraryManager() {
 void LibraryManager::clear() {
     avlTree.clear();
     bstTree.clear();
+    readerTable.clear();
 }
 
 size_t LibraryManager::getTotalBooks() const {
@@ -172,6 +174,46 @@ bool LibraryManager::checkAVLBalance(int& height, bool& balanced) const {
     return balanced;
 }
 
+bool LibraryManager::addReader(const Reader& reader) {
+    return readerTable.insert(reader);
+}
+
+bool LibraryManager::updateReader(const Reader& reader) {
+    return readerTable.update(reader);
+}
+
+bool LibraryManager::removeReader(const string& cmnd) {
+    return readerTable.remove(cmnd);
+}
+
+const Reader* LibraryManager::searchReader(const string& cmnd) const {
+    return readerTable.find(cmnd);
+}
+
+void LibraryManager::compareReaderSearch(const string& cmnd) const {
+    const vector<Reader> readers = readerTable.toVector();
+    size_t sequentialSteps = 0;
+    const Reader* sequentialResult = nullptr;
+    chrono::steady_clock::time_point sequentialStart = chrono::steady_clock::now();
+    for (size_t i = 0; i < readers.size(); ++i) {
+        ++sequentialSteps;
+        if (readers[i].CMND == cmnd) {
+            sequentialResult = &readers[i];
+            break;
+        }
+    }
+    chrono::steady_clock::time_point sequentialEnd = chrono::steady_clock::now();
+    chrono::steady_clock::time_point hashStart = chrono::steady_clock::now();
+    const Reader* hashResult = readerTable.find(cmnd);
+    chrono::steady_clock::time_point hashEnd = chrono::steady_clock::now();
+    cout << "Hash table (separate chaining): " << (hashResult ? "tim thay" : "khong tim thay")
+         << ", bucket " << readerTable.bucketIndex(cmnd) << ", thoi gian "
+         << chrono::duration_cast<chrono::nanoseconds>(hashEnd - hashStart).count() << " ns\n";
+    cout << "Tim tuan tu: " << (sequentialResult ? "tim thay" : "khong tim thay")
+         << ", so buoc " << sequentialSteps << ", thoi gian "
+         << chrono::duration_cast<chrono::nanoseconds>(sequentialEnd - sequentialStart).count() << " ns\n";
+}
+
 // ================= GIAO DIỆN CONSOLE MENU =================
 
 void LibraryManager::showMenu() const {
@@ -183,6 +225,7 @@ void LibraryManager::showMenu() const {
     cout << "5. Hien thi sach theo ISBN (AVL)\n";
     cout << "6. Hien thi sach theo ten (BST)\n";
     cout << "7. Kiem tra tinh can bang AVL\n";
+    cout << "8. Quan ly doc gia (Hash Table)\n";
     cout << "0. Thoat\n";
     cout << "==================================\n";
     cout << "Nhap lua chon: ";
@@ -374,11 +417,52 @@ void LibraryManager::handleCheckAVLBalance() {
     }
 }
 
+void LibraryManager::handleReaderMenu() {
+    int choice = -1;
+    while (choice != 0) {
+        cout << "\n========== QUAN LY DOC GIA ==========" << endl
+             << "1. Them doc gia\n2. Tim doc gia theo CMND\n3. Hien thi danh sach\n"
+             << "4. Cap nhat doc gia\n5. Xoa doc gia\n6. So sanh Hash va tim tuan tu\n0. Quay lai\n";
+        choice = inputInt("Nhap lua chon: ", 0, 6);
+        if (choice == 1) {
+            Reader reader;
+            reader.CMND = inputString("CMND: ");
+            reader.fullName = inputString("Ho ten: ");
+            reader.email = inputString("Email (co the de trong): ", true);
+            reader.phone = inputString("Dien thoai (co the de trong): ", true);
+            reader.cardType = inputString("Loai the (co the de trong): ", true);
+            cout << (addReader(reader) ? "[+] Them doc gia thanh cong.\n" : "[!] Ma CMND bi trung hoac thong tin khong hop le.\n");
+        } else if (choice == 2) {
+            string cmnd = inputString("Nhap CMND can tim: ");
+            const Reader* reader = searchReader(cmnd);
+            if (reader) cout << reader->CMND << " | " << reader->fullName << " | " << reader->email << " | " << reader->phone << " | " << reader->cardType << "\n";
+            else cout << "Khong tim thay doc gia.\n";
+        } else if (choice == 3) {
+            displayReaders();
+        } else if (choice == 4) {
+            string cmnd = inputString("CMND doc gia can cap nhat: ");
+            const Reader* existing = searchReader(cmnd);
+            if (!existing) { cout << "Khong tim thay doc gia.\n"; continue; }
+            Reader reader = *existing;
+            string value = inputString("Ho ten moi (Enter giu nguyen): ", true); if (!value.empty()) reader.fullName = value;
+            value = inputString("Email moi (Enter giu nguyen): ", true); if (!value.empty()) reader.email = value;
+            value = inputString("Dien thoai moi (Enter giu nguyen): ", true); if (!value.empty()) reader.phone = value;
+            value = inputString("Loai the moi (Enter giu nguyen): ", true); if (!value.empty()) reader.cardType = value;
+            cout << (updateReader(reader) ? "[+] Cap nhat thanh cong.\n" : "[!] Cap nhat that bai.\n");
+        } else if (choice == 5) {
+            string cmnd = inputString("CMND doc gia can xoa: ");
+            cout << (removeReader(cmnd) ? "[+] Da xoa doc gia.\n" : "Khong tim thay doc gia.\n");
+        } else if (choice == 6) {
+            compareReaderSearch(inputString("Nhap CMND can tim/so sanh: "));
+        }
+    }
+}
+
 void LibraryManager::run() {
     int choice = -1;
     while (choice != 0) {
         showMenu();
-        choice = inputInt("", 0, 7);
+        choice = inputInt("", 0, 8);
 
         switch (choice) {
             case 1:
@@ -401,6 +485,9 @@ void LibraryManager::run() {
                 break;
             case 7:
                 handleCheckAVLBalance();
+                break;
+            case 8:
+                handleReaderMenu();
                 break;
             case 0:
                 cout << "\nCam on ban da su dung chuong trinh Quan ly Thu vien. Tam biet!\n";

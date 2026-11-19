@@ -85,6 +85,7 @@ $cmd = @(
     'src/models/Book.cpp',
     'src/datastructures/AVLTree.cpp',
     'src/datastructures/BSTree.cpp',
+    'src/datastructures/ReaderHashTable.cpp',
     'src/managers/LibraryManager.cpp',
     '-o',
     'library_management.exe'

@@ -4,6 +4,7 @@
 #include "Book.h"
 #include "AVLTree.h"
 #include "BSTree.h"
+#include "ReaderHashTable.h"
 #include <string>
 #include <vector>
 
@@ -83,6 +84,14 @@ public:
      */
     bool checkAVLBalance(int& height, bool& balanced) const;
 
+    bool addReader(const Reader& reader);
+    bool updateReader(const Reader& reader);
+    bool removeReader(const string& cmnd);
+    const Reader* searchReader(const string& cmnd) const;
+    size_t getTotalReaders() const { return readerTable.size(); }
+    void displayReaders() const { readerTable.displayAll(); }
+    void compareReaderSearch(const string& cmnd) const;
+
     /**
      * @brief Lấy tổng số sách hiện có trong hệ thống
      */
@@ -102,6 +111,7 @@ public:
 private:
     AVLTree avlTree; // Cấu trúc chính: AVL quản lý theo ISBN
     BSTree bstTree;  // Cấu trúc phụ: BST sắp xếp danh mục theo Tên
+    ReaderHashTable readerTable;
 
     // Các hàm phục vụ Console UI
     void showMenu() const;
@@ -112,6 +122,7 @@ private:
     void handleDisplayByISBN();
     void handleDisplayByTitle();
     void handleCheckAVLBalance();
+    void handleReaderMenu();
 
     // Các hàm hỗ trợ nhập liệu an toàn từ bàn phím
     static string inputString(const string& prompt, bool allowEmpty = false);
