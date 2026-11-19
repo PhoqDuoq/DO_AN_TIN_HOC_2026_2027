@@ -1,80 +1,33 @@
 #ifndef READERHASHTABLE_H
 #define READERHASHTABLE_H
 
-#include <vector>
-#include <string>
+#include <cstddef>
 #include <list>
-using namespace std;
-
-#include "../models/Reader.h"
-
-/**
- * Hash table for managing Readers (độc giả) using separate chaining.
- * Key: CMND (string).
- */
-class ReaderHashTable {
-public:
-    explicit ReaderHashTable(size_t bucketCount = 101);
-    ~ReaderHashTable();
-
-    // Insert a new reader. Returns false if CMND already exists.
-    bool insert(const Reader& reader);
-
-    // Find a reader by CMND. Returns nullptr if not found.
-    const Reader* find(const string& cmnd) const;
-    Reader* find(const string& cmnd);
-
-    // Update existing reader (identified by CMND). Returns false if not found.
-    bool update(const Reader& reader);
-
-    // Remove reader by CMND. Returns false if not found.
-    bool remove(const string& cmnd);
-
-    // Display all readers.
-    void displayAll() const;
-
-    // Clear the entire table.
-    void clear();
-
-    size_t size() const { return numElements; }
-
-private:
-    // Simple polynomial rolling hash for strings.
-    size_t hash(const string& key) const;
-
-    vector< list<Reader> > table; // each bucket is a list of Readers
-    size_t numElements;
-};
-
-#endif // READERHASHTABLE_H
-#define READERHASHTABLE_H
-
-#include <vector>
 #include <string>
-using namespace std;
+#include <vector>
+#include "Reader.h"
 
-class Reader;
-
+// Hash table quan ly doc gia theo CMND, giai quyet va cham bang separate chaining.
 class ReaderHashTable {
 public:
-    ReaderHashTable(int capacity = 101);
-    ~ReaderHashTable();
+    explicit ReaderHashTable(std::size_t bucketCount = 101);
 
-    void insert(Reader* reader);
-    Reader* find(int id) const;
-    bool remove(int id);
+    bool insert(const Reader& reader);
+    const Reader* find(const std::string& cmnd) const;
+    Reader* find(const std::string& cmnd);
+    bool update(const Reader& reader);
+    bool remove(const std::string& cmnd);
+    void displayAll() const;
+    std::vector<Reader> toVector() const;
     void clear();
 
-private:
-    struct Entry {
-        int key;
-        Reader* value;
-        bool used;
-    };
+    std::size_t size() const { return numElements; }
+    std::size_t bucketCount() const { return table.size(); }
+    std::size_t bucketIndex(const std::string& key) const;
 
-    vector<Entry> table;
-    int capacity;
-    int hash(int id) const;
+private:
+    std::vector<std::list<Reader> > table;
+    std::size_t numElements;
 };
 
 #endif

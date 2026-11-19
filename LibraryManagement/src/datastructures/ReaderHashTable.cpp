@@ -1,64 +1,91 @@
 #include "ReaderHashTable.h"
 
-#include "Reader.h"
+#include <iostream>
 
-ReaderHashTable::ReaderHashTable(int capacity) : capacity(capacity) {
-    table.resize(capacity);
-    for (auto& entry : table) {
-        entry.key = -1;
-        entry.value = nullptr;
-        entry.used = false;
+using namespace std;
+
+ReaderHashTable::ReaderHashTable(size_t bucketCount)
+    : table(bucketCount == 0 ? 1 : bucketCount), numElements(0) {}
+
+size_t ReaderHashTable::bucketIndex(const string& key) const {
+    // Polynomial rolling hash; unsigned arithmetic has defined wraparound.
+    size_t value = 0;
+    for (unsigned char ch : key) {
+        value = value * 31u + ch;
     }
+    return value % table.size();
 }
 
-ReaderHashTable::~ReaderHashTable() {
-    clear();
+bool ReaderHashTable::insert(const Reader& reader) {
+    if (reader.CMND.empty() || reader.fullName.empty() || find(reader.CMND)) return false;
+    table[bucketIndex(reader.CMND)].push_back(reader);
+    ++numElements;
+    return true;
 }
 
-int ReaderHashTable::hash(int id) const {
-    return id % capacity;
-}
-
-void ReaderHashTable::insert(Reader* reader) {
-    if (!reader) return;
-    int index = hash(reader->getId());
-    while (table[index].used && table[index].key != reader->getId()) {
-        index = (index + 1) % capacity;
-    }
-    table[index].key = reader->getId();
-    table[index].value = reader;
-    table[index].used = true;
-}
-
-Reader* ReaderHashTable::find(int id) const {
-    int index = hash(id);
-    while (table[index].used) {
-        if (table[index].key == id) {
-            return table[index].value;
-        }
-        index = (index + 1) % capacity;
+const Reader* ReaderHashTable::find(const string& cmnd) const {
+    if (cmnd.empty()) return nullptr;
+    const list<Reader>& chain = table[bucketIndex(cmnd)];
+    for (list<Reader>::const_iterator it = chain.begin(); it != chain.end(); ++it) {
+        if (it->CMND == cmnd) return &*it;
     }
     return nullptr;
 }
 
-bool ReaderHashTable::remove(int id) {
-    int index = hash(id);
-    while (table[index].used) {
-        if (table[index].key == id) {
-            table[index].value = nullptr;
-            table[index].key = -1;
-            table[index].used = false;
+Reader* ReaderHashTable::find(const string& cmnd) {
+    if (cmnd.empty()) return nullptr;
+    list<Reader>& chain = table[bucketIndex(cmnd)];
+    for (list<Reader>::iterator it = chain.begin(); it != chain.end(); ++it) {
+        if (it->CMND == cmnd) return &*it;
+    }
+    return nullptr;
+}
+
+bool ReaderHashTable::update(const Reader& reader) {
+    Reader* existing = find(reader.CMND);
+    if (!existing || reader.fullName.empty()) return false;
+    *existing = reader;
+    return true;
+}
+
+bool ReaderHashTable::remove(const string& cmnd) {
+    if (cmnd.empty()) return false;
+    list<Reader>& chain = table[bucketIndex(cmnd)];
+    for (list<Reader>::iterator it = chain.begin(); it != chain.end(); ++it) {
+        if (it->CMND == cmnd) {
+            chain.erase(it);
+            --numElements;
             return true;
         }
-        index = (index + 1) % capacity;
     }
     return false;
 }
 
-void ReaderHashTable::clear() {
-    for (auto& entry : table) {
-        entry.key = -1;
-        entry.value = nullptr;
-        entry.used = false;
+void ReaderHashTable::displayAll() const {
+    if (numElements == 0) {
+        cout << "Danh sach doc gia dang rong.\n";
+        return;
     }
+    cout << "\n" << "CMND | Ho ten | Email | Dien thoai | Loai the\n";
+    cout << "---------------------------------------------------------------\n";
+    for (size_t i = 0; i < table.size(); ++i) {
+        for (list<Reader>::const_iterator it = table[i].begin(); it != table[i].end(); ++it) {
+            cout << it->CMND << " | " << it->fullName << " | " << it->email << " | "
+                 << it->phone << " | " << it->cardType << "\n";
+        }
+    }
+}
+
+vector<Reader> ReaderHashTable::toVector() const {
+    vector<Reader> readers;
+    readers.reserve(numElements);
+    for (size_t i = 0; i < table.size(); ++i)
+        for (list<Reader>::const_iterator it = table[i].begin(); it != table[i].end(); ++it)
+            readers.push_back(*it);
+    return readers;
+}
+
+void ReaderHashTable::clear() {
+    for (size_t i = 0; i < table.size(); ++i) table[i].clear();
+    numElements = 0;
 }

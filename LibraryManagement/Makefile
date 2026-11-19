@@ -27,6 +27,7 @@ TEST_ALL_TARGET = test_all
 CORE_SRC = $(SRC_DIR)/models/Book.cpp \
            $(SRC_DIR)/datastructures/AVLTree.cpp \
            $(SRC_DIR)/datastructures/BSTree.cpp \
+           $(SRC_DIR)/datastructures/ReaderHashTable.cpp \
            $(SRC_DIR)/managers/LibraryManager.cpp
 
 MAIN_SRC = $(SRC_DIR)/main.cpp $(CORE_SRC)
